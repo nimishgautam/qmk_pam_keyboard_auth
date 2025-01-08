@@ -21,7 +21,7 @@ On a security scale of 1 to 10 it's maybe a 2 or 3 at best and does mean if some
 
 ## On the QMK Side
 
-You need QMK code to match, here's an example
+You need QMK code to initiate this. All of this is inside the `sample_qmk` folder for convenience as well
 
 ```c
 #include "raw_hid.h"
@@ -95,7 +95,7 @@ Finally-Finally, be sure your rules.mk has this:
 RAW_ENABLE = yes
 ```
 
-## Installation Instructions
+## Build and Installation Instructions
 
 ### Check your hardware address
 
@@ -114,7 +114,7 @@ RAW_ENABLE = yes
 ```bash
 echo -ne "\x10\x10\xde\xad" | sudo tee /etc/pam_keyboard_auth/auth.key
 ```
-(Replace \x10\x10\xde\xad with whatever 4-byte key you want, just make sure it's the same as in the QMK file)
+(Replace \x10\x10\xde\xad with whatever 4-byte key you want, just make sure it's the same as in the QMK secrets file)
 
 3. Secure the key file:
 
@@ -129,7 +129,7 @@ Compile the module:
 gcc -fPIC -shared -o pam_keyboard_auth.so pam_keyboard_auth.c -lpam -lhidapi-hidraw
 ```
 
-5. Move the module to the PAM security directory:
+ Move the module to the PAM security directory:
 ```bash
 sudo mv pam_keyboard_auth.so /lib/x86_64-linux-gnu/security
 ```
@@ -147,6 +147,11 @@ Add the following line:
 auth sufficient pam_keyboard_auth.so
 ```
 (Ensure this line is above other auth lines for this module to take precedence.)
+
+## GNOME keyring
+One annoying caveat -- the gnome keyring uses password auth. Even if you log in using anything other than a password, it asks you for a password.
+
+The only way around it is to either be OK with providing your password again later, or to set no password on your keyring. You can do the latter with `seahorse` if you open it, go to your default/login keyring, and change the password to blank. It means your keyring passwords are only as secure as your session so it's a tradeoff, but so is this in some ways.
 
 ## How It Works
 We're kind of doing cryptography in a super simple way. The computer has a simple private key installed and the keyboard has the same private key installed. Rather than asking the keyboard for the key directly, it's XORd with a random integer array and the keyboard has to respond with the value XORd back with the actual key.
